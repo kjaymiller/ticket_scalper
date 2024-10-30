@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ticket_scalper"
+dynamic = ["version"]
+authors = [
+    {name = "Jay Miller", email = "kjaymiller@gmail.com"},
+]
+description = "Scrape the results for Jira Ticket Search Results and Github Pull Request Results"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+  "python-dotenv",
+  "click",
+  "beautifulsoup4",
+  "trogon",
+]
+
+[project.scripts]
+  scalper = "ticket_scalper.cli:cli"
+
+[project.urls]
+"Homepage" = "https://github.com/kjaymiller/ticket_scalper"

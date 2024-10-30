@@ -1,0 +1,4 @@
+python-dotenv
+click
+beautifulsoup4
+trogon

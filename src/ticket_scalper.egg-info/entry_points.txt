@@ -1,0 +1,2 @@
+[console_scripts]
+scalper = ticket_scalper.cli:cli
