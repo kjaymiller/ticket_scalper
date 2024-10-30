@@ -11,8 +11,8 @@ Ticket Scalper takes HTML from your clipboard, parses the content, and extracts 
 
 ## Installation:
 
-1. pip install the repo: `git clone
-https://github.com/yourusername/ticket_scalper.git`
+1. pip install the repo: `pip install
+git+https://github.com/kjaymiller/ticket_scalper.git`
 
 ## Contributing
 
