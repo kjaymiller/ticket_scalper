@@ -19,9 +19,25 @@ install the package using pip
 pip install git+https://github.com/kjaymiller/ticket_scalper.git
 ```
 
-## GitHub search
+## Usage
 
-![GitHub Search Results](/assets/github.png)
+1. Get the source-code of your search results
+2. Run the app in the terminal
+
+```shell
+scalper github|jira <HTML SOURCE>
+```
+
+### You can also copy the source to your clipboard and run the command with the `--clipboard` flag
+
+```shell
+scalper github|jira --clipboard
+```
+
+## Alternatives
+
+- GH|JIRA cli + jq
+- gh|jira python packages
 
 ## Contributing
 

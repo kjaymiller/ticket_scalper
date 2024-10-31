@@ -1,5 +1,7 @@
-import logging
+"""the ticket scalper CLI implementation"""
 
+import logging
+import pyperclip
 import click
 from bs4 import BeautifulSoup
 
@@ -17,7 +19,7 @@ from .jira_ticket_scrape import (
 )
 
 
-def check_for_relative_links(
+def _check_for_relative_links(
     url: str,
     root_url: str,
 ) -> str:
@@ -29,18 +31,18 @@ def check_for_relative_links(
     return f"{root_url}{url}"
 
 
-def build_link_markdown(
+def _build_link_markdown(
     link,
     link_root: str,
 ) -> str:
     """return the url in markdown format"""
     logging.debug("link text= %s" % link.text)
-    link_url = check_for_relative_links(link.get("href"), link_root)
+    link_url = _check_for_relative_links(link.get("href"), link_root)
     logging.debug("link href = %s" % link_url)
     return f"- [{link.text}]({link_url})"
 
 
-def get_urls_from_html(
+def _get_urls_from_html(
     html: str,
     html_search_tag: str,
     soup_attr: str,
@@ -56,42 +58,49 @@ def get_urls_from_html(
     for tag in tags:
         a_tags.append(tag.find("a"))
     logging.debug("found tags: %s" % a_tags)
-    return [build_link_markdown(link, link_root) for link in a_tags]
+    return [_build_link_markdown(link, link_root) for link in a_tags]
 
 
-@click.group()
-def cli():
-    pass
+@click.command()
+@click.argument(
+    "parser",
+    type=click.Choice(["jira", "github"]),
+)
+@click.argument("html", required=False)
+@click.option("--clipboard/--no-clipboard", default=False)
+def cli(parser, clipboard: bool, html: str | None = None):
+    """parse the contents of search results and return markdown links"""
+    if clipboard:
+        html = pyperclip.paste()
 
-
-@cli.command()
-@click.argument("html")
-def github(html: str):
-    """github results parser"""
-    output = "\n".join(
-        get_urls_from_html(
-            html,
-            GITHUB_SEARCH_TAG,
-            GITHUB_SEARCH_ATTR,
-            GITHUB_ATTR_VALUE,
-            GITHUB_URL_ROOT,
+    if not html:
+        raise ValueError(
+            "No HTML Detected. Please provide an HTML value or add the --clipboard option"
         )
-    )
 
-    click.echo(output)
+    match parser:
+        case "github":
+            output = "\n".join(
+                _get_urls_from_html(
+                    html,
+                    GITHUB_SEARCH_TAG,
+                    GITHUB_SEARCH_ATTR,
+                    GITHUB_ATTR_VALUE,
+                    GITHUB_URL_ROOT,
+                )
+            )
 
-
-@cli.command()
-@click.argument("html")
-def jira(html: str):
-    output = "\n".join(
-        get_urls_from_html(
-            html,
-            JIRA_SEARCH_TAG,
-            JIRA_SEARCH_ATTR,
-            JIRA_ATTR_VALUE,
-            JIRA_URL_ROOT,
-        )
-    )
+        case "jira":
+            output = "\n".join(
+                _get_urls_from_html(
+                    html,
+                    JIRA_SEARCH_TAG,
+                    JIRA_SEARCH_ATTR,
+                    JIRA_ATTR_VALUE,
+                    JIRA_URL_ROOT,
+                )
+            )
+        case _:
+            raise ValueError("Invalid Option")
 
     click.echo(output)
