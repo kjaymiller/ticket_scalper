@@ -1,6 +1,7 @@
 """the ticket scalper CLI implementation"""
 
 import logging
+import re
 import pyperclip
 import click
 from bs4 import BeautifulSoup
@@ -16,6 +17,7 @@ from .jira_ticket_scrape import (
     JIRA_SEARCH_ATTR,
     JIRA_SEARCH_TAG,
     JIRA_URL_ROOT,
+    JIRA_TITLE_FORMAT,
 )
 
 
@@ -32,14 +34,24 @@ def _check_for_relative_links(
 
 
 def _build_link_markdown(
-    link,
-    link_root: str,
+    link, link_root: str, modifier: re.Pattern | None = None
 ) -> str:
     """return the url in markdown format"""
     logging.debug("link text= %s" % link.text)
     link_url = _check_for_relative_links(link.get("href"), link_root)
     logging.debug("link href = %s" % link_url)
-    return f"- [{link.text}]({link_url})"
+
+    if modifier:
+        modifier_match = modifier.match(link.text)
+
+        if modifier_match:
+            modifier_groups = modifier_match.groups()
+            logging.debug(modifier_groups)
+            link_text = " - ".join(modifier_groups) if modifier_groups else link.text
+            return f"- [{link_text}]({link_url})"
+
+    link_text = link.text
+    return f"- [{link_text}]({link_url})"
 
 
 def _get_urls_from_html(
@@ -47,7 +59,6 @@ def _get_urls_from_html(
     html_search_tag: str,
     soup_attr: str,
     attr_value: str,
-    link_root: str,
 ) -> list[str]:
     """given html, return a list of urls"""
     soup = BeautifulSoup(html, "html.parser")
@@ -58,7 +69,7 @@ def _get_urls_from_html(
     for tag in tags:
         a_tags.append(tag.find("a"))
     logging.debug("found tags: %s" % a_tags)
-    return [_build_link_markdown(link, link_root) for link in a_tags]
+    return a_tags
 
 
 @click.command()
@@ -80,25 +91,28 @@ def cli(parser, clipboard: bool, html: str | None = None):
 
     match parser:
         case "github":
+            a_tags = _get_urls_from_html(
+                html,
+                GITHUB_SEARCH_TAG,
+                GITHUB_SEARCH_ATTR,
+                GITHUB_ATTR_VALUE,
+            )
             output = "\n".join(
-                _get_urls_from_html(
-                    html,
-                    GITHUB_SEARCH_TAG,
-                    GITHUB_SEARCH_ATTR,
-                    GITHUB_ATTR_VALUE,
-                    GITHUB_URL_ROOT,
-                )
+                [_build_link_markdown(link, GITHUB_URL_ROOT) for link in a_tags]
             )
 
         case "jira":
+            a_tags = _get_urls_from_html(
+                html,
+                JIRA_SEARCH_TAG,
+                JIRA_SEARCH_ATTR,
+                JIRA_ATTR_VALUE,
+            )
             output = "\n".join(
-                _get_urls_from_html(
-                    html,
-                    JIRA_SEARCH_TAG,
-                    JIRA_SEARCH_ATTR,
-                    JIRA_ATTR_VALUE,
-                    JIRA_URL_ROOT,
-                )
+                [
+                    _build_link_markdown(link, JIRA_URL_ROOT, JIRA_TITLE_FORMAT)
+                    for link in a_tags
+                ]
             )
         case _:
             raise ValueError("Invalid Option")
